@@ -1,13 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using MyBlazorApp.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Replace with your actual MySQL connection string
-var connectionString = "server=localhost;port=3306;user=root;password=0000;database=prplu;";
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+    options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),
+    new MySqlServerVersion(new Version(8, 0, 34)))
+);
+builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 builder.Services.AddCors(options =>
 {
@@ -44,6 +47,13 @@ if (app.Environment.IsDevelopment())
 }
 
 
+app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "profile_pictures")),
+    RequestPath = "/profile_pictures"
+});
 
 // app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");

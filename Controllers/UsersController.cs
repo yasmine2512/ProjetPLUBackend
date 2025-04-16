@@ -14,53 +14,85 @@ public class UsersController : ControllerBase
 
     public UsersController(AppDbContext context)
     {
+        
         _context = context;
     }
 
-     [HttpGet]
+      [HttpGet]
          public async Task<ActionResult<IEnumerable<User>>> GetUsers()
-         {
-        return  await _context.Users  .ToListAsync();
+          {
+         return  await _context.Users  .ToListAsync();
     
+          }
+
+
+         [HttpPost]
+  public async Task<IActionResult> CreateUser([FromBody] User user)
+  {
+      Console.WriteLine("0");
+     var requestBody = await new StreamReader(Request.Body).ReadToEndAsync();
+          Console.WriteLine($"Request Body: {requestBody}");
+
+      if (!ModelState.IsValid)
+      {
+          Console.WriteLine("ModelState is not valid!");
+         foreach (var entry in ModelState)
+         {
+             Console.WriteLine($"Key: {entry.Key}, Error: {string.Join(", ", entry.Value.Errors.Select(e => e.ErrorMessage))}");
          }
+          return BadRequest(ModelState);
+      }
 
+      Console.WriteLine($"Received: {JsonSerializer.Serialize(user)}");
 
-        [HttpPost]
- public async Task<IActionResult> CreateUser([FromBody] User user)
+      _context.Users.Add(user);
+     await _context.SaveChangesAsync();
+
+     return Ok(user);
+  }
+
+  [HttpPost("login")]
+ public async Task<IActionResult> Login([FromBody] LoginModel login)
  {
-     Console.WriteLine("0");
-    var requestBody = await new StreamReader(Request.Body).ReadToEndAsync();
-    Console.WriteLine($"Request Body: {requestBody}");
+     var user = await _context.Users
+         .FirstOrDefaultAsync(u => u.Email == login.Email && u.Password == login.Password);
 
-     if (!ModelState.IsValid)
-     {
-         Console.WriteLine("ModelState is not valid!");
-        foreach (var entry in ModelState)
-        {
-            Console.WriteLine($"Key: {entry.Key}, Error: {string.Join(", ", entry.Value.Errors.Select(e => e.ErrorMessage))}");
-        }
+     if (user == null)
+         return Unauthorized(new { message = "Invalid credentials" });
 
-      //   Console.WriteLine(JsonSerializer.Serialize(user));
-         return BadRequest(ModelState);
-     }
-
-     Console.WriteLine($"Received: {JsonSerializer.Serialize(user)}");
-
-     _context.Users.Add(user);
-    await _context.SaveChangesAsync();
-
-    return Ok(user);
+     return Ok(user);
  }
 
- [HttpPost("login")]
-public async Task<IActionResult> Login([FromBody] LoginModel login)
-{
-    var user = await _context.Users
-        .FirstOrDefaultAsync(u => u.Email == login.Email && u.Password == login.Password);
 
-    if (user == null)
-        return Unauthorized(new { message = "Invalid credentials" });
+ [HttpPost("upload-profile-picture/{userId}")]
+ public async Task<IActionResult> UploadProfilePicture(int userId, IFormFile file)
+ {
+     if (file == null || file.Length == 0)
+         return BadRequest("No file uploaded.");
 
-    return Ok(user);
-}
+     var user = await _context.Users.FindAsync(userId);
+     if (user == null)
+         return NotFound();
+
+     var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "profile_pictures");
+     if (!Directory.Exists(uploadsFolder))
+         Directory.CreateDirectory(uploadsFolder);
+
+     var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+     var filePath = Path.Combine(uploadsFolder, fileName);
+
+     using (var stream = new FileStream(filePath, FileMode.Create))
+     {
+         await file.CopyToAsync(stream);
+     }
+
+     user.PicturePath = $"profile_pictures/{fileName}";
+     await _context.SaveChangesAsync();
+
+     return Ok(new { path = user.PicturePath });
+ }
+
+
+
+
 }

@@ -15,7 +15,8 @@ public class Memoire
 
 
     public int ProfessorID { get; set; }
-
+    
+    public string FilePath { get; set; }
 
     public string AuthorName { get; set; }
 

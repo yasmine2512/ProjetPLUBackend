@@ -22,6 +22,7 @@ public class User
     [Required]
     public string University { get; set; }
     public string Specialty { get; set; }
+    public string? PicturePath { get; set; }
 
     // Relationships
     public ICollection<Memoire> PostedMemoires { get; set; } = new List<Memoire>();

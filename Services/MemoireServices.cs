@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using YourProjectNamespace.Models;
+using MyBlazorBackend.Models;
 
 public class MemoireService
 {

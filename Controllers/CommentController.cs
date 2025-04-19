@@ -1,7 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyBlazorBackend.Models;
 using MyBlazorApp.Data;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ProjetPLU.Controllers
 {
@@ -16,7 +20,7 @@ namespace ProjetPLU.Controllers
             _context = context;
         }
 
-        // Obtenir tous les commentaires d'une thèse
+        // GET: api/comment/memoire/5
         [HttpGet("memoire/{memoireId}")]
         public IActionResult GetByMemoire(int memoireId)
         {
@@ -29,22 +33,9 @@ namespace ProjetPLU.Controllers
             return Ok(comments);
         }
 
-        // Ajouter un commentaire
+        // POST: api/comment
         [HttpPost]
-        public async Task<IActionResult> Add([FromBody] Comment comment)
-        {
-            if (string.IsNullOrWhiteSpace(comment.Text))
-                return BadRequest("Le commentaire est vide");
-
-            _context.Comments.Add(comment);
-            await _context.SaveChangesAsync();
-
-            return Ok("Commentaire ajouté !");
-        }
-
-        //afficher la date devant le commentaire
-        [HttpPost]
-        [Authorize] // voir plus bas pour activer l'auth
+        [Authorize] // Nécessite que l'utilisateur soit connecté
         public async Task<IActionResult> Add([FromBody] Comment comment)
         {
             if (string.IsNullOrWhiteSpace(comment.Text))
@@ -58,5 +49,20 @@ namespace ProjetPLU.Controllers
             return Ok("Commentaire ajouté !");
         }
 
+        // DELETE: api/comment/12
+        [HttpDelete("{id}")]
+        [Authorize] // Nécessite que l'utilisateur soit connecté
+        public async Task<IActionResult> Delete(int id)
+        {
+            var comment = await _context.Comments.FindAsync(id);
+
+            if (comment == null)
+                return NotFound("Commentaire non trouvé");
+
+            _context.Comments.Remove(comment);
+            await _context.SaveChangesAsync();
+
+            return Ok("Commentaire supprimé avec succès !");
+        }
     }
 }

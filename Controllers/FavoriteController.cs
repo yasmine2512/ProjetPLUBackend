@@ -22,24 +22,55 @@ namespace ProjetPLU.Controllers
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetFavoritesByUser(int userId)
         {
-            var favorites = await _context.Favorites
-                .Where(f => f.UserID == userId)
-                .Include(f => f.Memoire)
-                .ToListAsync();
+            try
+    {
+        var favorites = await _context.Favorites
+            .Where(f => f.UserID == userId)
+            .Include(f => f.Memoire)
+            .ThenInclude(m => m.Professor)
+            .Include(f => f.User) 
+            .Select(f => new
+            {
+                f.UserID,
+                f.MemoireID,
+              
+                Memoire = new
+                {
+                    f.Memoire.MemoireID,
+                    f.Memoire.Title,
+                    f.Memoire.AuthorName,
+                    f.Memoire.Field,
+                    f.Memoire.Keywords,
+                    f.Memoire.Date,
+                    f.Memoire.FilePath,
+                    f.Memoire.ProfessorName,
+                    f.Memoire.ProfessorPicturePath
+                }
+            })
+            .ToListAsync();
 
-            return Ok(favorites);
+        return Ok(favorites);
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, $"Erreur serveur: {ex.Message}");
+    }
         }
 
         // POST: api/favorite
         [HttpPost]
-        public async Task<IActionResult> AddFavorite([FromBody] Favorite favorite)
+        public async Task<IActionResult> AddFavorite([FromBody] FavoriteDto dto)
         {
             var exists = await _context.Favorites
-                .AnyAsync(f => f.UserID == favorite.UserID && f.MemoireID == favorite.MemoireID);
+                .AnyAsync(f => f.UserID == dto.UserID && f.MemoireID == dto.MemoireID);
 
             if (exists)
                 return BadRequest("Cette thèse est déjà dans les favoris.");
-
+            var favorite = new Favorite
+             {
+               UserID = dto.UserID,
+               MemoireID = dto.MemoireID
+            };
             _context.Favorites.Add(favorite);
             await _context.SaveChangesAsync();
 

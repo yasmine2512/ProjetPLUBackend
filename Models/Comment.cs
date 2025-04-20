@@ -1,3 +1,7 @@
+using System;
+using System.Text.Json.Serialization;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 public class Comment
 {
     public int CommentID { get; set; }
@@ -14,6 +18,8 @@ public class Comment
     public DateTime Date { get; set; } = DateTime.Now;
 
     // Navigation
+    [JsonIgnore]
     public User User { get; set; }
-    public Memoire Memoire { get; set; }
+    [JsonIgnore]
+ public Memoire Memoire { get; set; }
 }

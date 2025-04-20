@@ -83,26 +83,28 @@ public class AppDbContext : DbContext
                 Date = reader.GetDateTime("Date"),
                 ProfessorID = reader.GetInt32("ProfessorID"),
                 AuthorName = reader.GetString("AuthorName"),
-                FilePath = reader.GetString("FilePath")
-            });
-        }
+                FilePath = reader.GetString("FilePath"),
+                ProfessorName = reader.GetString("ProfessorName"),
+                ProfessorPicturePath = reader.GetString("ProfessorPicturePath")
+             });
+         }
         return theses;
+   
     }
-
-public Memoire GetById(int id)
+public List<Memoire> GetById(int id)
         {
-            Memoire these = null;
+            var these = new List<Memoire>();
 
             using var connection = new MySqlConnection(_connectionString);
             connection.Open();
-            using var cmd = new MySqlCommand("GetThesisByID", connection);
+            using var cmd = new MySqlCommand("GetThesesByProfessor", connection);
             cmd.CommandType = CommandType.StoredProcedure;
-            cmd.Parameters.AddWithValue("@tid", id);
+            cmd.Parameters.AddWithValue("@profId", id);
 
             using var reader = cmd.ExecuteReader();
-            if (reader.Read())
+            while(reader.Read())
             {
-                these = new Memoire
+                  these.Add(new Memoire
                 {
                     MemoireID = reader.GetInt32("MemoireID"),
                     Title = reader.GetString("Title"),
@@ -111,8 +113,11 @@ public Memoire GetById(int id)
                     Date = reader.GetDateTime("Date"),
                     ProfessorID = reader.GetInt32("ProfessorID"),
                     AuthorName = reader.GetString("AuthorName"),
-                    FilePath = reader.GetString("FilePath")
-                };
+                    FilePath = reader.GetString("FilePath"),
+                     ProfessorName = reader.GetString("ProfessorName"),
+                     ProfessorPicturePath = reader.GetString("ProfessorPicturePath")
+                });
+                 
             }
 
             return these;
@@ -162,3 +167,5 @@ public Memoire GetById(int id)
         }
 
 }
+
+

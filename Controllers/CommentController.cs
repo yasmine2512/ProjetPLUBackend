@@ -25,23 +25,46 @@ namespace ProjetPLU.Controllers
         public IActionResult GetByMemoire(int memoireId)
         {
             var comments = _context.Comments
-                .Include(c => c.User)
-                .Where(c => c.MemoireID == memoireId)
-                .OrderByDescending(c => c.Date)
-                .ToList();
+        .Include(c => c.User)
+        .Where(c => c.MemoireID == memoireId)
+        .OrderByDescending(c => c.Date)
+        .Select(c => new CommentDto
+        {
+            CommentID = c.CommentID,
+            Text = c.Text,
+            Date = c.Date,
+            UserID = c.UserID,
+            FullName = c.User.FullName,
+            PicturePath = c.User.PicturePath
+        })
+        .ToList();
 
-            return Ok(comments);
+    return Ok(comments);
         }
 
         // POST: api/comment
         [HttpPost]
-        [Authorize] // Nécessite que l'utilisateur soit connecté
         public async Task<IActionResult> Add([FromBody] Comment comment)
         {
             if (string.IsNullOrWhiteSpace(comment.Text))
                 return BadRequest("Le commentaire est vide");
 
             comment.Date = DateTime.Now;
+
+ var user = await _context.Users.FindAsync(comment.UserID);
+    if (user == null)
+    {
+        return BadRequest("Utilisateur non trouvé.");
+    }
+
+    // Optional: attach user to prevent EF from trying to create a new one
+    comment.User = user;
+
+    var memoire = await _context.Memoires.FindAsync(comment.MemoireID);
+    if (memoire == null)
+        return BadRequest("Mémoire non trouvé");
+
+    comment.Memoire = memoire;
 
             _context.Comments.Add(comment);
             await _context.SaveChangesAsync();

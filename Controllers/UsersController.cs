@@ -92,6 +92,23 @@ public class UsersController : ControllerBase
      return Ok(new { path = user.PicturePath });
  }
 
+[HttpGet("{id}")]
+public ActionResult<User> GetUserById(int id)
+{
+    try
+    {
+        var user = _context.GetUserByID(id);
+
+        if (user == null)
+            return NotFound();
+
+        return Ok(user);
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, $"Internal server error: {ex.Message}");
+    }
+}
 
 
 

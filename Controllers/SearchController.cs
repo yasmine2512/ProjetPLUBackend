@@ -2,51 +2,80 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyBlazorApp.Data;
 using MyBlazorApp.Models;
+using System.Data.Common;
 
-namespace MyBlazorApp.Controllers;
-
-[ApiController]
-[Route("api/[controller]")]
-public class SearchController : ControllerBase
+namespace MyBlazorApp.Controllers
 {
-    private readonly AppDbContext _context;
-
-    public SearchController(AppDbContext context)
+    [ApiController]
+    [Route("api/[controller]")]
+    public class SearchController : ControllerBase
     {
-        _context = context;
-    }
+        private readonly AppDbContext _context;
 
-    [HttpGet("advanced")]
-    public async Task<IActionResult> Search([FromQuery] string query)
-    {
-        var results = new List<Memoire>();
-        var conn = _context.Database.GetDbConnection();
-
-        await conn.OpenAsync();
-
-        using var command = conn.CreateCommand();
-        command.CommandText = "CALL SearchThesesFullText(@query)";
-        var param = command.CreateParameter();
-        param.ParameterName = "@query";
-        param.Value = query;
-        command.Parameters.Add(param);
-
-        using var reader = await command.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
+        public SearchController(AppDbContext context)
         {
-            results.Add(new Memoire {
-                MemoireID = reader.GetInt32("MemoireID"),
-                Title = reader.GetString("Title"),
-                Keywords = reader.IsDBNull("Keywords") ? "" : reader.GetString("Keywords"),
-                AuthorName = reader.GetString("AuthorName"),
-                Field = reader.GetString("Field"),
-                Date = reader.GetDateTime("Date"),
-                ProfessorID = reader.GetInt32("ProfessorID"),
-            });
+            _context = context;
         }
 
-        await conn.CloseAsync();
-        return Ok(results);
+        // 🔍 Auto-complete suggestions endpoint
+        [HttpGet("suggestions")]
+        public async Task<IActionResult> GetSuggestions([FromQuery] string term)
+        {
+            if (string.IsNullOrWhiteSpace(term))
+            {
+                return BadRequest("Search term is required.");
+            }
+
+            term = term.Trim().ToLowerInvariant();
+
+            var suggestions = await _context.Memoires
+                .Where(m =>
+                    m.Title.ToLower().Contains(term) ||
+                    m.AuthorName.ToLower().Contains(term) ||
+                    m.Keywords.ToLower().Contains(term))
+                .Select(m => new { m.Title, m.AuthorName })
+                .Distinct()
+                .Take(10)
+                .ToListAsync();
+
+            return Ok(suggestions);
+        }
+
+        // 📚 Suggestions de thèses similaires à celle consultée
+        [HttpGet("similar/{memoireId}")]
+        public async Task<IActionResult> GetSimilarMemoires(int memoireId)
+        {
+            var results = new List<Memoire>();
+            var conn = _context.Database.GetDbConnection();
+            await conn.OpenAsync();
+
+            using var command = conn.CreateCommand();
+            command.CommandText = "CALL GetSimilarMemoires(@memoireId)";
+            var param = command.CreateParameter();
+            param.ParameterName = "@memoireId";
+            param.Value = memoireId;
+            command.Parameters.Add(param);
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                results.Add(new Memoire
+                {
+                    MemoireID = reader.GetInt32(reader.GetOrdinal("MemoireID")),
+                    Title = reader.GetString(reader.GetOrdinal("Title")),
+                    Keywords = reader.IsDBNull(reader.GetOrdinal("Keywords")) ? "" : reader.GetString(reader.GetOrdinal("Keywords")),
+                    AuthorName = reader.GetString(reader.GetOrdinal("AuthorName")),
+                    Field = reader.GetString(reader.GetOrdinal("Field")),
+                    Date = reader.GetDateTime(reader.GetOrdinal("Date")),
+                    ProfessorID = reader.GetInt32(reader.GetOrdinal("ProfessorID"))
+                });
+            }
+
+            await conn.CloseAsync();
+            return Ok(results);
+        }
     }
 }
+
+    
 

@@ -62,7 +62,34 @@ public class AppDbContext : DbContext
              .OnDelete(DeleteBehavior.Cascade);
      }
 
+public User GetUserByID(int id)
+{
+    using var connection = new MySqlConnection(_connectionString);
+    connection.Open();
 
+    using var command = new MySqlCommand("GetUserByID", connection);
+    command.CommandType = CommandType.StoredProcedure;
+    command.Parameters.AddWithValue("@uid", id);
+
+    using var reader = command.ExecuteReader();
+    if (reader.Read())
+    {
+        return new User
+        {
+            UserID = reader.GetInt32("UserID"),
+            FullName = reader.GetString("FullName"),
+            Email = reader.GetString("Email"),
+            PicturePath = reader.IsDBNull(reader.GetOrdinal("PicturePath")) ? null : reader.GetString("PicturePath"),
+            Role = reader.GetString("Role"),
+            Major = reader.IsDBNull(reader.GetOrdinal("Major")) ? null : reader.GetString("Major"),
+            University = reader.IsDBNull(reader.GetOrdinal("University")) ? null : reader.GetString("University"),
+            Specialty = reader.IsDBNull(reader.GetOrdinal("Specialty")) ? null : reader.GetString("Specialty")
+            // Add more fields if needed
+        };
+    }
+
+    return null;
+}
 
      public List<Memoire> GetAllTheses()
     {

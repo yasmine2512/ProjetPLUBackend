@@ -17,6 +17,7 @@ namespace ProjetPLU.Controllers
         {
            _repository = context;
         }
+        
    [HttpGet]
         public IActionResult GetAll()
         {
@@ -30,9 +31,8 @@ namespace ProjetPLU.Controllers
                 return StatusCode(500, "Erreur lors de la récupération des thèses : " + ex.Message);
             }
         }
-
-        // GET: api/theses/{id}
-        [HttpGet("{id}")]
+        // GET: api/these/user/{id}
+        [HttpGet("user/{id}")]
         public IActionResult GetById(int id)
         {
             try
@@ -49,7 +49,25 @@ namespace ProjetPLU.Controllers
             }
         }
 
-        // POST: api/theses
+        // GET: api/these/{id}
+        [HttpGet("{id}")]
+        public IActionResult GetTheseById(int id)
+        {
+            try
+            {
+                var these = _repository.GetTheseById(id);
+                if (these == null)
+                    return NotFound($"Thèse avec l'ID {id} non trouvée.");
+
+                return Ok(these);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Erreur lors de la récupération de la thèse : " + ex.Message);
+            }
+        }
+
+        // POST: api/these
         [HttpPost]
         public IActionResult Add([FromBody] Memoire these)
         {
@@ -162,5 +180,27 @@ try{
     }
 
         
-}}
+}
+ public async Task<List<Memoire>> SearchThesesAsync(string query)
+    {
+        // ✅ Call stored procedure using FromSqlInterpolated
+        var results = await _repository.Memoires
+            .FromSqlInterpolated($"CALL SearchThesesFullText({query})")
+            .ToListAsync();
+
+        // ✅ Fallback: partial search using Contains
+        if (!results.Any())
+        {
+            results = await _repository.Memoires
+                .Where(m =>
+                    EF.Functions.Like(m.Title, $"%{query}%") ||
+                    EF.Functions.Like(m.AuthorName, $"%{query}%") ||
+                    EF.Functions.Like(m.Keywords, $"%{query}%"))
+                .ToListAsync();
+        }
+
+        return results;
+    }
+
+    }
 }

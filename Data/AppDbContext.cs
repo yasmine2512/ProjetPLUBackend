@@ -91,6 +91,7 @@ public User GetUserByID(int id)
     return null;
 }
 
+
      public List<Memoire> GetAllTheses()
     {
         var theses = new List<Memoire>();
@@ -117,6 +118,38 @@ public User GetUserByID(int id)
          }
         return theses;
    
+    }
+
+     public Memoire? GetTheseById(int id)
+    {
+         using var connection = new MySqlConnection(_connectionString);
+            connection.Open();
+
+        using var command = new MySqlCommand("GetThesisByID", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue("@tid", id);
+
+        using var reader = command.ExecuteReader();
+        if (reader.Read())
+        {
+            return new Memoire
+            {
+                MemoireID = reader.GetInt32("MemoireID"),
+                Title = reader.GetString("Title"),
+                Field = reader.GetString("Field"),
+                Keywords = reader.GetString("Keywords"),
+                Date = reader.GetDateTime("Date"),
+                ProfessorID = reader.GetInt32("ProfessorID"),
+                FilePath = reader.GetString("FilePath"),
+                AuthorName = reader.GetString("AuthorName")
+                // Optionally initialize related lists to empty if needed
+            };
+        }
+
+        return null;
     }
 public List<Memoire> GetById(int id)
         {

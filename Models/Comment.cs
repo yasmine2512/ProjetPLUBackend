@@ -19,7 +19,7 @@ public class Comment
 
     // Navigation
     [JsonIgnore]
-    public User User { get; set; }
+    public User? User { get; set; }
     [JsonIgnore]
- public Memoire Memoire { get; set; }
+ public Memoire? Memoire { get; set; }
 }

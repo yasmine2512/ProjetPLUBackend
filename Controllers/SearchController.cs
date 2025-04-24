@@ -33,7 +33,17 @@ namespace MyBlazorApp.Controllers
                     m.Title.ToLower().Contains(term) ||
                     m.AuthorName.ToLower().Contains(term) ||
                     m.Keywords.ToLower().Contains(term))
-                .Select(m => new { m.Title, m.AuthorName })
+                .Select(m => new {
+                 m.MemoireID,
+                 m.Title,
+                 m.AuthorName,
+                 m.FilePath,
+                 m.ProfessorID,
+                 ProfessorName = m.Professor.FullName,
+                 ProfessorPicturePath = m.Professor.PicturePath,
+                 m.Date,
+                 m.Field
+                  })
                 .Distinct()
                 .Take(10)
                 .ToListAsync();
@@ -77,5 +87,4 @@ namespace MyBlazorApp.Controllers
     }
 }
 
-    
-
+  

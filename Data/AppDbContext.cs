@@ -113,7 +113,7 @@ public User GetUserByID(int id)
                 AuthorName = reader.GetString("AuthorName"),
                 FilePath = reader.GetString("FilePath"),
                 ProfessorName = reader.GetString("ProfessorName"),
-                ProfessorPicturePath = reader.GetString("ProfessorPicturePath")
+                ProfessorPicturePath = reader.IsDBNull("ProfessorPicturePath") ? null : reader.GetString("ProfessorPicturePath")
              });
          }
         return theses;

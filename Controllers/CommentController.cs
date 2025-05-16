@@ -42,7 +42,8 @@ namespace ProjetPLU.Controllers
     return Ok(comments);
         }
 
-        // POST: api/comment
+
+ // POST: api/comment
         [HttpPost]
         public async Task<IActionResult> Add([FromBody] Comment comment)
         {
@@ -74,7 +75,6 @@ namespace ProjetPLU.Controllers
 
         // DELETE: api/comment/12
         [HttpDelete("{id}")]
-        [Authorize] // Nécessite que l'utilisateur soit connecté
         public async Task<IActionResult> Delete(int id)
         {
             var comment = await _context.Comments.FindAsync(id);

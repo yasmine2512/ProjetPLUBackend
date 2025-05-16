@@ -3,6 +3,10 @@ using MyBlazorApp.Data;
 using MyBlazorApp.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using MySql.Data.MySqlClient;
+using System.Data;
+using Microsoft.Extensions.Configuration;
+
 
 namespace MyBlazorBackend.Controllers;
 
@@ -14,7 +18,6 @@ public class UsersController : ControllerBase
 
     public UsersController(AppDbContext context)
     {
-        
         _context = context;
     }
 
@@ -29,7 +32,6 @@ public class UsersController : ControllerBase
          [HttpPost]
   public async Task<IActionResult> CreateUser([FromBody] User user)
   {
-      Console.WriteLine("0");
      var requestBody = await new StreamReader(Request.Body).ReadToEndAsync();
           Console.WriteLine($"Request Body: {requestBody}");
 
@@ -47,8 +49,7 @@ public class UsersController : ControllerBase
 
       _context.Users.Add(user);
      await _context.SaveChangesAsync();
-
-     return Ok(user);
+     return CreatedAtAction(nameof(GetUserById), new { id = user.UserID }, user);
   }
 
   [HttpPost("login")]
@@ -109,7 +110,47 @@ public ActionResult<User> GetUserById(int id)
         return StatusCode(500, $"Internal server error: {ex.Message}");
     }
 }
+[HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteUser(int id)
+    {
+        var user = await _context.Users
+                             .FirstOrDefaultAsync(u => u.UserID == id);
+
+    if (user == null)
+    {
+        return NotFound();
+    }
+
+    var theses = await _context.Memoires
+                               .Where(t => t.ProfessorID == user.UserID)
+                               .ToListAsync();
+
+    _context.Memoires.RemoveRange(theses);
 
 
+    var comments = await _context.Comments
+                                 .Where(c => c.UserID == user.UserID)
+                                 .ToListAsync();
+
+    _context.Comments.RemoveRange(comments);
+
+if (!string.IsNullOrEmpty(user.PicturePath))
+    {
+        var profilePicturePath = Path.Combine("wwwroot", "profile_pictures", user.PicturePath);
+        
+        if (System.IO.File.Exists(profilePicturePath))
+        {
+            System.IO.File.Delete(profilePicturePath); 
+        }
+    }
+    _context.Users.Remove(user);
+
+ 
+    await _context.SaveChangesAsync();
+
+    return NoContent();
+    }
+
+ 
 
 }

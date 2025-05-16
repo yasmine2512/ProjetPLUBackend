@@ -144,8 +144,9 @@ public User GetUserByID(int id)
                 Date = reader.GetDateTime("Date"),
                 ProfessorID = reader.GetInt32("ProfessorID"),
                 FilePath = reader.GetString("FilePath"),
-                AuthorName = reader.GetString("AuthorName")
-                // Optionally initialize related lists to empty if needed
+                AuthorName = reader.GetString("AuthorName"),
+                ProfessorName = reader.GetString("ProfessorName"), 
+                ProfessorPicturePath = reader.IsDBNull("ProfessorPicturePath") ? null : reader.GetString("ProfessorPicturePath")
             };
         }
 
@@ -175,7 +176,7 @@ public List<Memoire> GetById(int id)
                     AuthorName = reader.GetString("AuthorName"),
                     FilePath = reader.GetString("FilePath"),
                      ProfessorName = reader.GetString("ProfessorName"),
-                     ProfessorPicturePath = reader.GetString("ProfessorPicturePath")
+                      ProfessorPicturePath = reader.IsDBNull(reader.GetOrdinal("ProfessorPicturePath")) ? null : reader.GetString("ProfessorPicturePath")
                 });
                  
             }

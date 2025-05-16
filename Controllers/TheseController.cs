@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using MyBlazorBackend.Models;
 using Microsoft.EntityFrameworkCore;
+using ProjetPLU.Models;
 
 namespace ProjetPLU.Controllers
 {
@@ -12,10 +13,12 @@ namespace ProjetPLU.Controllers
     public class TheseController : ControllerBase
     {
         private readonly AppDbContext _repository;
+        private readonly ThesisSummarizerService _summarizer;
 
-        public TheseController(AppDbContext context)
+        public TheseController(AppDbContext context, ThesisSummarizerService summarizer)
         {
            _repository = context;
+           _summarizer = summarizer;
         }
         
    [HttpGet]
@@ -82,7 +85,7 @@ namespace ProjetPLU.Controllers
             }
         }
 
-        // PUT: api/theses/{id}
+        // PUT: api/these/{id}
         [HttpPut("{id}")]
         public IActionResult Update(int id, [FromBody] Memoire these)
         {
@@ -104,36 +107,40 @@ namespace ProjetPLU.Controllers
             }
         }
 
-        // DELETE: api/theses/{id}
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
-        {
-            try
-            {
-                // Vérifier si la thèse existe avant la suppression
-                var existing = _repository.GetById(id);
-                if (existing == null)
-                    return NotFound($"Aucune thèse avec l'ID {id}");
+        // DELETE: api/these/{id}
+       [HttpDelete("{id}")]
+public async Task<IActionResult> Delete(int id)
+{
+    try
+    {
+        // Find the thesis by ID
+        var memoire = await _repository.Memoires
+                            .FirstOrDefaultAsync(m => m.MemoireID == id);
 
-                _repository.DeleteThesis(id);
-                return Ok("Thèse supprimée avec succès !");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, "Erreur lors de la suppression de la thèse : " + ex.Message);
-            }
-        }
+        if (memoire == null)
+            return NotFound($"Aucune thèse avec l'ID {id}");
 
+        // Load and remove associated comments
+        var comments = await _repository.Comments
+                              .Where(c => c.MemoireID == id)
+                              .ToListAsync();
+
+        _repository.Comments.RemoveRange(comments);
+
+        // Remove the thesis
+        _repository.Memoires.Remove(memoire);
+
+        // Save all changes
+        await _repository.SaveChangesAsync();
+
+        return Ok("Thèse et ses commentaires supprimés avec succès !");
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, "Erreur lors de la suppression : " + ex.Message);
+    }
+}
        
-   
-    
-
-// [HttpGet]
-// public async Task<ActionResult<IEnumerable<Memoire>>> GetAll()
-// {
-//     var memoires = await _context.Memoires.ToListAsync();
-//     return Ok(memoires);
-// }
 
         [HttpPost("upload")]
 public async Task<IActionResult> UploadThesis([FromForm] ThesisUploadDto dto, [FromForm] IFormFile file)
@@ -183,12 +190,11 @@ try{
 }
  public async Task<List<Memoire>> SearchThesesAsync(string query)
     {
-        // ✅ Call stored procedure using FromSqlInterpolated
         var results = await _repository.Memoires
             .FromSqlInterpolated($"CALL SearchThesesFullText({query})")
             .ToListAsync();
 
-        // ✅ Fallback: partial search using Contains
+        
         if (!results.Any())
         {
             results = await _repository.Memoires
@@ -202,5 +208,17 @@ try{
         return results;
     }
 
+[HttpPost("summarize")]
+    public async Task<IActionResult> Summarize([FromBody] SummarizeRequest model)
+    { var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", model.FilePath);
+
+    if (!System.IO.File.Exists(fullPath))
+    {
+        return NotFound($"File not found: {fullPath}");
+    }
+        var extractedText = _summarizer.ExtractTextFromPdf(fullPath);
+        var summary = await _summarizer.SummarizeTextAsync(extractedText);
+        return Ok(summary);
+    }
     }
 }

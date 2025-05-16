@@ -17,7 +17,7 @@ namespace MyBlazorApp.Controllers
             _context = context;
         }
 
-        // 🔍 Auto-complete suggestions endpoint
+      
         [HttpGet("suggestions")]
         public async Task<IActionResult> GetSuggestions([FromQuery] string term)
         {
@@ -32,7 +32,8 @@ namespace MyBlazorApp.Controllers
                 .Where(m =>
                     m.Title.ToLower().Contains(term) ||
                     m.AuthorName.ToLower().Contains(term) ||
-                    m.Keywords.ToLower().Contains(term))
+                    m.Keywords.ToLower().Contains(term) ||
+                    m.Field.ToLower().Contains(term)) 
                 .Select(m => new {
                  m.MemoireID,
                  m.Title,
@@ -42,7 +43,8 @@ namespace MyBlazorApp.Controllers
                  ProfessorName = m.Professor.FullName,
                  ProfessorPicturePath = m.Professor.PicturePath,
                  m.Date,
-                 m.Field
+                 m.Field,
+                 m.Keywords
                   })
                 .Distinct()
                 .Take(10)
@@ -51,7 +53,7 @@ namespace MyBlazorApp.Controllers
             return Ok(suggestions);
         }
 
-        // 📚 Suggestions de thèses similaires à celle consultée
+       
         [HttpGet("similar/{memoireId}")]
         public async Task<IActionResult> GetSimilarMemoires(int memoireId)
         {
@@ -87,4 +89,4 @@ namespace MyBlazorApp.Controllers
     }
 }
 
-  
+    

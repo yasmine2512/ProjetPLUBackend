@@ -37,14 +37,16 @@ namespace ProjetPLU.Controllers
                 Memoire = new
                 {
                     f.Memoire.MemoireID,
+                    f.Memoire.ProfessorID,
                     f.Memoire.Title,
                     f.Memoire.AuthorName,
                     f.Memoire.Field,
                     f.Memoire.Keywords,
                     f.Memoire.Date,
                     f.Memoire.FilePath,
-                    f.Memoire.ProfessorName,
-                    f.Memoire.ProfessorPicturePath
+                    ProfessorName = f.Memoire.Professor.FullName,
+                    ProfessorPicturePath = f.Memoire.Professor.PicturePath
+                  
                 }
             })
             .ToListAsync();

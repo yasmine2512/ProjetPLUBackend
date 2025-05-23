@@ -15,7 +15,7 @@ namespace ProjetPLU.Controllers
         private readonly AppDbContext _repository;
       
 
-        public TheseController(AppDbContext context, ThesisSummarizerService summarizer)
+        public TheseController(AppDbContext context)
         {
            _repository = context;
         

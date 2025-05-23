@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using MyBlazorBackend.Models;
 using Microsoft.EntityFrameworkCore;
-using ProjetPLU.Models;
+
 
 namespace ProjetPLU.Controllers
 {

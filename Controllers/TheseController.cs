@@ -13,12 +13,12 @@ namespace ProjetPLU.Controllers
     public class TheseController : ControllerBase
     {
         private readonly AppDbContext _repository;
-        private readonly ThesisSummarizerService _summarizer;
+      
 
         public TheseController(AppDbContext context, ThesisSummarizerService summarizer)
         {
            _repository = context;
-           _summarizer = summarizer;
+        
         }
         
    [HttpGet]
@@ -208,17 +208,5 @@ try{
         return results;
     }
 
-[HttpPost("summarize")]
-    public async Task<IActionResult> Summarize([FromBody] SummarizeRequest model)
-    { var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", model.FilePath);
-
-    if (!System.IO.File.Exists(fullPath))
-    {
-        return NotFound($"File not found: {fullPath}");
-    }
-        var extractedText = _summarizer.ExtractTextFromPdf(fullPath);
-        var summary = await _summarizer.SummarizeTextAsync(extractedText);
-        return Ok(summary);
-    }
     }
 }
